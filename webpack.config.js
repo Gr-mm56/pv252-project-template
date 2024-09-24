@@ -25,7 +25,7 @@ module.exports = {
   output: {
     clean: true,
     filename: "[name].[hash].bundle.js",
-    path: path.resolve(__dirname, "dist"),  // must be an absolute path
+    path: path.resolve(__dirname, "dist"), // must be an absolute path
   },
   /* Dist is also where we want to start the development web server. */
   devServer: {
@@ -79,7 +79,7 @@ module.exports = {
     }),
     // Generate separate HTML files for the two sites.
     new HtmlWebpackPlugin({
-      title: "Site A",      
+      title: "Site A",
       chunks: ["site_a"],
       filename: "site_a.html",
       template: "./src/html/site_a.template.ejs",

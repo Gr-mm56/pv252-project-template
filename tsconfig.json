@@ -3,10 +3,7 @@
     "noEmit": true,
     "noImplicitAny": true,
     "allowJs": true,
-    "allowImportingTsExtensions": true    
+    "allowImportingTsExtensions": true
   },
-  "include": [
-    "src/*",
-    "custom.d.ts"
-  ]
+  "include": ["src/*", "custom.d.ts"]
 }

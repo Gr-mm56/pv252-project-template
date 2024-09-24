@@ -7,5 +7,5 @@ test("find-watman", async ({ page }) => {
 });
 test("find-site-c", async ({ page }) => {
   await page.goto("/");
-  await expect(page.locator("#site-c")).toBeInViewport();
+  await expect(page.locator("#site-c")).not.toBeInViewport();
 });

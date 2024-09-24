@@ -7,5 +7,4 @@ export function initMenu(container: HTMLElement, selected: string) {
   if (selection.length > 0) {
     selection[0].classList.add("uk-active");
   }
-  const AnswerToEverythingIs = 42;
 }

@@ -9,10 +9,10 @@ test("negative-fibonacci", () => {
   };
   expect(will_throw).toThrow("Cannot compute on negative numbers");
 });
-test("set fibonacci component innerHTML", () =>{
+test("set fibonacci component innerHTML", () => {
   const mockComponent = { innerHTML: "" } as HTMLElement;
   initFibonacciUi(mockComponent);
   expect(mockComponent.innerHTML).toBe(
-    '5th fibonacci number is <code>5</code>'
+    "5th fibonacci number is <code>5</code>",
   );
-})
+});

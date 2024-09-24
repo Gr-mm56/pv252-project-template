@@ -1,6 +1,6 @@
 import settings_icon from "./img/settings.svg";
 
-export function initMenu(container: HTMLElement, selected: string) {
+export function initMenu(container: HTMLElement, selected: number) {
   const icon: HTMLImageElement = container.querySelector(".menu-icon")!;
   icon.src = settings_icon;
   const selection = container.getElementsByClassName(selected);

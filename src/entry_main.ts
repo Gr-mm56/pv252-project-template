@@ -1,4 +1,4 @@
-import { attr, css, FASTElement, html, observable, when, repeat, Observable, Subscriber } from "@microsoft/fast-element";
+import { attr, css, FASTElement, html, observable, when, Observable, Subscriber } from "@microsoft/fast-element";
 import { reactive } from "@microsoft/fast-element/state.js";
 
 import { allComponents, provideFluentDesignSystem } from '@fluentui/web-components';
@@ -19,7 +19,7 @@ class PersonListItem {
 
   constructor(data: Person | null = null, error: string | null = null) {
     this.data = data;
-    this.error = error;    
+    this.error = error;
   }
 
   /**
@@ -76,7 +76,7 @@ export interface PeopleListContext {
   people: PersonListItem[];
 
   // Indicates that at least one person in the list is still loading.
-  isLoading: boolean;  
+  isLoading: boolean;
 
   // The number of loaded elements.
   loaded: number;
@@ -109,7 +109,7 @@ export class PeopleListContextElement extends FASTElement implements PeopleListC
     // The "reactive" part is very important! It means that not only is the
     // list itself observable, but also that the individual objects in that
     // list will notify upon change any templates that use them.
-    let dummyData = [];
+    const dummyData = [];
     for (let i=0; i<ITEM_COUNT; i++) {
       dummyData.push(reactive(new PersonListItem()));
     }
@@ -123,13 +123,13 @@ export class PeopleListContextElement extends FASTElement implements PeopleListC
 
     // This code simulates a long running "loading" script that
     // populates the "people" array one by one.
-    
+
     this.isLoading = true;
     this.loaded = 0;
     const loadOne = () => {
       if (Math.random() > ERROR_RATE) {
         this.people[this.loaded].setOk(this.allPeople[this.loaded]);
-        console.log("Loaded", this.people[this.loaded]);        
+        console.log("Loaded", this.people[this.loaded]);
       } else {
         this.people[this.loaded].setError("Failed to load.");
         console.log("Failed to load.");
@@ -154,13 +154,13 @@ export class PeopleListContextElement extends FASTElement implements PeopleListC
       setTimeout(() => {
         if (Math.random() > 0.2) {
           this.people[position].setOk(this.allPeople[position]);
-          console.log("Reloaded", this.people[position]);        
+          console.log("Reloaded", this.people[position]);
         } else {
           this.people[position].setError("Failed to load after refresh.");
           console.log("Failed to load.");
         }
       }, LOAD_TIME);
-    }    
+    }
   }
 
 }
@@ -172,37 +172,100 @@ PeopleListContextElement.define({
 })
 
 export class PersonElement extends FASTElement {
-  // Some suggestions for properties you might want to use:
-
-  // @PeopleListContext context!: PeopleListContext;
-
-  // @attr position: number = 0;
-
-  // @observable person: PersonListItem = new PersonListItem();
+  @PeopleListContext context!: PeopleListContext;
+  @attr position: number = 0;
+  @observable person: PersonListItem = new PersonListItem();
+  constructor(person: PersonListItem, position: number) {
+    super();
+    this.person = person;
+    this.position = position;
+  }
+  connectedCallback(): void {
+    super.connectedCallback();
+    if(this.person.isError()){
+      setTimeout(() => {
+        this.context.refresh(this.position);
+      }, 1000);
+    }
+  }
+  handleRefresh() {
+    this.context.refresh(this.position);
+  }
 }
 
-const personElementTemplate = html<PersonElement>``;
+const personElementTemplate = html<PersonElement>`
+  ${when(x => x.person.isError(), html<PersonElement>`
+    <fluent-card style="padding: 16px; margin-bottom: 16px; height: 66px;">
+      <span style="display: inline-block; margin: 4px 16px 4px 16px;">Item failed to load.</span>
+      <fluent-button appearance="accent" style="float: left;" @click=${(x, ) => x.handleRefresh()}>Refresh</fluent-button>
+    </fluent-card>
+  `)}
+  ${when(x => x.person.isOk(), html<PersonElement>`
+  <fluent-card style="padding: 16px; margin-bottom: 16px;">
+    <fluent-breadcrumb>
+      <fluent-breadcrumb-item>${(x) => x.person.data?.continentName}</fluent-breadcrumb-item>
+      <fluent-breadcrumb-item>${(x) => x.person.data?.countryName}</fluent-breadcrumb-item>
+      <fluent-breadcrumb-item>${(x) => x.person.data?.birthcity}</fluent-breadcrumb-item>
+    </fluent-breadcrumb>
+    <h2 style="margin-top: 0px;">${(x) => x.person.data?.name}</h2>
+    <fluent-divider role="separator"></fluent-divider>
+    <p>This person was born in ${(x) => x.person.data?.birthyear} and is/was working as ${(x) => x.person.data?.occupation} in the ${(x) => x.person.data?.industry} industry.</p>
+    <fluent-divider role="separator" style="margin-bottom: 16px;"></fluent-divider>
+    <a href="https://maps.google.com/?q=${(x) => x.person.data?.LAT},${(x) => x.person.data?.LON}" target="_blank">
+      <fluent-button appearance="accent">Show on map</fluent-button>
+    </a>
+    <fluent-button appearance="outline" @click=${(x, ) => x.handleRefresh()}>Refresh</fluent-button>
+  </fluent-card>
+`)}
+  ${when(x => x.person.isLoading(), html<PersonElement>`
+    <fluent-skeleton style="height: 66px; padding: 16px; box-sizing: border-box;" shape="rect" shimmer="true">Loading...</fluent-skeleton>
+  `)}
+`;
 
 PersonElement.define({
   name: "person-item",
   template: personElementTemplate
 })
 
-export class PeopleList extends FASTElement {
-  // Probably will need to access the context state:
+export class PeopleList extends FASTElement { //todo implement this, how will they interact
+  @PeopleListContext data!: PeopleListContext;
 
-  // @PeopleListContext data!: PeopleListContext;
 
   connectedCallback(): void {
     super.connectedCallback();
-
-    // This may be the place where you want to add child elements
-    // assuming they are not part of the template?
+    this.renderPeople();
+    //Listen for updates
+    Observable.getNotifier(this.data).subscribe(<Subscriber>{
+      handleChange:(subject: PeopleListContext, args): void => {
+        if (args.propertyName === "loaded") {
+          this.renderPeople(); // Now `this` refers to PeopleList
+        }
+      }
+    });
+  };
+  renderPeople():void {
+    this.data.people.forEach((person, index) => {
+      setTimeout(() => { // timeout so I am not watching 20 loading... bars at a time
+        const personElement = new PersonElement(person, index);
+        this.appendChild(personElement);
+      }, index * 1000);
+    });
   }
 }
 
 const personListTemplate = html<PeopleList>`
-<div></div>`
+  <div class="uk-width-1-1" style="padding: 16px;">
+    <div class="box">
+      <fluent-card style="padding: 16px; margin-bottom: 16px;">
+        <span style="display: block; margin-bottom: 8px;">Loaded ${(x) => x.data.loaded}/20:</span>
+        <fluent-progress max="20" value="${(x) => x.data.loaded}"></fluent-progress>
+      </fluent-card>
+      <slot></slot>
+      ${when(x => x.data.isLoading, html<PeopleList>`
+      <fluent-skeleton style="height: 66px; padding: 16px; box-sizing: border-box;" shape="rect" shimmer="true">Loading...</fluent-skeleton>
+    `)}
+    </div>
+  </div>`;
 
 PeopleList.define({
   name: "people-list",

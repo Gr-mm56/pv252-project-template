@@ -1,5 +1,4 @@
 import { FASTElement, html, observable, when } from "@microsoft/fast-element";
-import { AsyncSha256 } from "./sha-256.js";
 
 /**
  * The purpose of `HashElement` is to compute the SHA256 checksum of the given file, using the
@@ -42,8 +41,21 @@ export class HashElement extends FASTElement {
     this.fileName = file.name;
 
     // Read the file and then start computing the hash.
-    // TODO: We want to "move" this computation into a WebWorker so that it
     // does not interfere with the rest of the UI.
+    const worker = new Worker(new URL("./hash_worker.js", import.meta.url));
+    worker.postMessage(file);
+    worker.onmessage = (e) => {
+      if (e.data.type === "file_data_total") {
+        this.total = e.data.data.length;
+      } else if (e.data.type === "hash_update") {
+        this.hash = e.data.data.hash;
+        this.remaining = 0;
+        this.elapsed = new Date().getTime() - this.#started.getTime();
+      } else if (e.data.type === "remaining_update") {
+        this.remaining = e.data.data.remaining;
+        this.elapsed = new Date().getTime() - this.#started.getTime();
+      }
+    };/*
     const reader = new FileReader();
     reader.onload = () => {
       // The result should always be a string in this case.
@@ -51,7 +63,7 @@ export class HashElement extends FASTElement {
 
       // At this point, we know how much data we have.
       this.total = fileData.length;
-
+      //is this there the web worker should be called?
       const hasher = new AsyncSha256();
       hasher.async_digest(
         fileData,
@@ -68,7 +80,7 @@ export class HashElement extends FASTElement {
         },
       );
     };
-    reader.readAsText(file);
+    reader.readAsText(file);*/
   }
 }
 

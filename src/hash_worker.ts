@@ -10,3 +10,20 @@ hasher.async_digest(
   (hash) => console.log(hash),
   (remaining) => console.log(remaining),
 );
+onmessage = (e) => {
+  const reader = new FileReader();
+  reader.readAsText(e.data);
+  reader.onload = () => {
+    const fileData = reader.result as string;
+    postMessage({type: 'file_data_total',data: {length: fileData.length}});
+    hasher.async_digest(
+      fileData,
+      (hash) => {
+        postMessage({type: 'hash_update', data: {hash: hash, remaining: 0, elapsed: new Date()}});
+      },
+      (remaining) => {
+        postMessage({type: 'remaining_update', data: {remaining: remaining, elapsed: new Date()}});
+      }
+    )
+  };
+}

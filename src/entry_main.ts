@@ -34,6 +34,7 @@ interface UpdateMessage {
 // More info at https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API
 const socket = new WebSocket("ws:socket.zavazadlo.unsigned-short.com");
 socket.onmessage = (message) => {
+  console.log(message);
   try {
     const data = JSON.parse(message.data);
 
@@ -87,12 +88,12 @@ function updateCanvas() {
 
 canvas.ondraw = (x, y) => {
   canvas.setPixel(x, y, true);
-  socket.send(JSON.stringify({ point: { x: x, y: y }, value: false })); //false for white, true for black
+  socket.send(JSON.stringify({ point: { x: x, y: y }, value: true })); //false for white, true for black
   updateCanvas();
 };
 
 setInterval(() => {
-  socket.send(JSON.stringify({ point: { x: 1, y: 1 }, value: false })); // idk if it can be empty
+  socket.send(JSON.stringify({ point: { x: 1, y: 1 }, value: false }));
   updateCanvas();
 }, 500);
 
